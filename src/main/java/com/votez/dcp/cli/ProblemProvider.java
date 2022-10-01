@@ -29,6 +29,7 @@ public class ProblemProvider {
     private Iterator<Map.Entry<String, String>> hard;
     private Iterator<Map.Entry<String, String>> lastUsedDifficulty;
     private String currentHeader;
+    private int counter = 0;
 
     @PostConstruct
     public void initProblems() throws IOException {
@@ -84,6 +85,7 @@ public class ProblemProvider {
     public void save() throws BackingStoreException {
         Preferences.userNodeForPackage(ProblemProvider.class).flush();
         log.debug("Successfully saved progress");
+        log.info("Solved {} problems", counter);
     }
     @ShellMethod(value = "provides next easy problem", key = {"next easy","easy"})
     public void nextEasy() throws IOException {
@@ -110,7 +112,7 @@ public class ProblemProvider {
         started = LocalDateTime.now();
         Map.Entry<String, String> problem = iterator.next();
         currentHeader = problem.getKey();
-        log.info("Starting problem {}", currentHeader);
+        log.info("Starting problem {}, which is {} of today", currentHeader, counter+1);
         log.info("\n\nProblem #{}\n\n{}", currentHeader, problem.getValue());
         lastUsedDifficulty = iterator;
     }
@@ -123,6 +125,7 @@ public class ProblemProvider {
         var solved = preferences.get("solved", "");
         solved += "," + currentHeader;
         preferences.put("solved", solved);
+        counter++;
     }
 
     @ShellMethod(value = "skip current", key = "skip")
