@@ -35,17 +35,18 @@ public class ProblemProvider {
     public void initProblems() throws IOException {
         var resolver = new PathMatchingResourcePatternResolver();
         var resources = resolver.getResources("classpath:dcp/*");
+        var duplicates = new HashSet<String>();
         var easy = new HashMap<String, String>();
         var medium = new HashMap<String, String>();
         var hard = new HashMap<String, String>();
         var solved = Arrays.stream(Preferences.userNodeForPackage(ProblemProvider.class).get("solved", "")
-                .split(","))
-                .filter(Predicate.not(x->x.equals(",")))
+                        .split(","))
+                .filter(Predicate.not(x -> x.equals(",")))
                 .filter(Predicate.not(String::isEmpty))
                 .collect(Collectors.toSet());
         var skipped = Arrays.stream(Preferences.userNodeForPackage(ProblemProvider.class).get("skipped", "")
                         .split(","))
-                .filter(Predicate.not(x->x.equals(",")))
+                .filter(Predicate.not(x -> x.equals(",")))
                 .filter(Predicate.not(String::isEmpty))
                 .collect(Collectors.toSet());
 
@@ -53,10 +54,12 @@ public class ProblemProvider {
         log.info("You have skip {} problems", skipped.size());
         for (Resource resource : resources) {
             Map<String, String> target;
-            if (skipped.contains(resource.getFilename().substring(0, 4)))
+            if (skipped.contains(resource.getFilename().substring(0, 4))) {
                 continue;
-            if (solved.contains(resource.getFilename().substring(0, 4)))
+            }
+            if (solved.contains(resource.getFilename().substring(0, 4))) {
                 continue;
+            }
 
             if (resource.getFilename().contains("Easy")) {
                 target = easy;
@@ -65,7 +68,13 @@ public class ProblemProvider {
             } else {
                 target = hard;
             }
-            target.put(resource.getFilename().substring(0, 4), Files.readString(Path.of(resource.getURI())));
+            String contents = Files.readString(Path.of(resource.getURI()));
+            if(duplicates.contains(contents)){
+                log.debug("Skip problem {} since it is a duplicate", resource.getFilename());
+            } else {
+                target.put(resource.getFilename().substring(0, 4), contents);
+                duplicates.add(contents);
+            }
         }
         List<Map.Entry<String, String>> easyEntries = new ArrayList<>(easy.entrySet());
         List<Map.Entry<String, String>> mediumEntries = new ArrayList<>(medium.entrySet());
@@ -87,12 +96,13 @@ public class ProblemProvider {
         log.debug("Successfully saved progress");
         log.info("Solved {} problems", counter);
     }
-    @ShellMethod(value = "provides next easy problem", key = {"next easy","easy"})
+
+    @ShellMethod(value = "provides next easy problem", key = {"next easy", "easy"})
     public void nextEasy() throws IOException {
         next(easy);
     }
 
-    @ShellMethod(value = "provides next medium problem", key = {"next medium","medium"})
+    @ShellMethod(value = "provides next medium problem", key = {"next medium", "medium"})
     public void nextMedium() throws IOException {
         next(medium);
     }
@@ -112,7 +122,7 @@ public class ProblemProvider {
         started = LocalDateTime.now();
         Map.Entry<String, String> problem = iterator.next();
         currentHeader = problem.getKey();
-        log.info("Starting problem {}, which is {} of today", currentHeader, counter+1);
+        log.info("Starting problem {}, which is {} of today", currentHeader, counter + 1);
         log.info("\n\nProblem #{}\n\n{}", currentHeader, problem.getValue());
         lastUsedDifficulty = iterator;
     }
@@ -138,8 +148,8 @@ public class ProblemProvider {
         preferences.put("skipped", skipped);
     }
 
-    @ShellMethod(value="reset solved database", key="reset solved database")
-    public void resetDb(){
+    @ShellMethod(value = "reset solved database", key = "reset solved database")
+    public void resetDb() {
         Preferences.userNodeForPackage(ProblemProvider.class).put("skipped", "");
         Preferences.userNodeForPackage(ProblemProvider.class).put("solved", "");
     }
@@ -157,18 +167,18 @@ public class ProblemProvider {
     }
 
     public Availability nextAvailability() {
-        return lastUsedDifficulty != null && lastUsedDifficulty.hasNext() ? Availability.available() : Availability.unavailable("no problem has started yet") ;
+        return lastUsedDifficulty != null && lastUsedDifficulty.hasNext() ? Availability.available() : Availability.unavailable("no problem has started yet");
     }
 
     public Availability nextEasyAvailability() {
-        return easy.hasNext()  ?  Availability.available() : Availability.unavailable("no more problems available") ;
+        return easy.hasNext() ? Availability.available() : Availability.unavailable("no more problems available");
     }
 
     public Availability nextMediumAvailability() {
-        return medium.hasNext()  ?  Availability.available() : Availability.unavailable("no more problems available") ;
+        return medium.hasNext() ? Availability.available() : Availability.unavailable("no more problems available");
     }
 
     public Availability nextHardAvailability() {
-        return hard.hasNext()  ?  Availability.available() : Availability.unavailable("no more problems available") ;
+        return hard.hasNext() ? Availability.available() : Availability.unavailable("no more problems available");
     }
 }
