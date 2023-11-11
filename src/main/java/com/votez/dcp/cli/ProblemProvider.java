@@ -39,6 +39,7 @@ public class ProblemProvider {
         var easy = new HashMap<String, String>();
         var medium = new HashMap<String, String>();
         var hard = new HashMap<String, String>();
+        int duplicateCount = 0;
         var solved = Arrays.stream(Preferences.userNodeForPackage(ProblemProvider.class).get("solved", "")
                         .split(","))
                 .filter(Predicate.not(x -> x.equals(",")))
@@ -71,6 +72,7 @@ public class ProblemProvider {
             String contents = Files.readString(Path.of(resource.getURI()));
             if(duplicates.contains(contents)){
                 log.debug("Skip problem {} since it is a duplicate", resource.getFilename());
+                duplicateCount++;
             } else {
                 target.put(resource.getFilename().substring(0, 4), contents);
                 duplicates.add(contents);
@@ -85,6 +87,7 @@ public class ProblemProvider {
         log.info("Prepared {} easy problems", easyEntries.size());
         log.info("Prepared {} medium problems", mediumEntries.size());
         log.info("Prepared {} hard problems", hardEntries.size());
+        log.info("Reduced {} duplicates" , duplicateCount);
         this.easy = easyEntries.iterator();
         this.medium = mediumEntries.iterator();
         this.hard = hardEntries.iterator();

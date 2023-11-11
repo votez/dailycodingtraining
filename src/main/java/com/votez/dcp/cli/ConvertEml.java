@@ -20,6 +20,14 @@ public class ConvertEml {
      * @throws IOException
      */
     public static void main(String[] args) throws IOException {
+        if( !new File(args[0]).exists() ) {
+            System.out.println("Source path does not exists: " + args[1]);
+            System.exit(1);
+        }
+        if( !new File(args[1]).exists() ) {
+            System.out.println("Destination path does not exists: " + args[1]);
+            System.exit(1);
+        }
         Files.list(Path.of(args[0]))
                 .map(Path::toFile)
                 .filter( file->file.getName().startsWith("Daily"))
@@ -45,6 +53,7 @@ public class ConvertEml {
                         writer.close();
                         System.out.println("File " + decoded + " written");
                     } catch (IOException e) {
+                        System.out.println("File " + decoded + "  cannot be processed");
                         throw new RuntimeException(e);
                     }
                 }
